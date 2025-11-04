@@ -1,0 +1,44 @@
+# Node dependencies for both apps
+node_modules/
+**/node_modules/
+
+# Next.js & build outputs
+.next/
+**/.next/
+out/
+**/out/
+build/
+**/build/
+.turbo/
+**/.turbo/
+
+# TypeScript & tooling artifacts
+*.tsbuildinfo
+**/*.tsbuildinfo
+next-env.d.ts
+**/next-env.d.ts
+
+# Environment & secrets
+.env
+.env.*
+**/.env
+**/.env.*
+*.pem
+*.pfx
+*.key
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS / editor junk
+.DS_Store
+Thumbs.db
+.vscode/
+
+# Vercel project data
+.vercel
+**/.vercel
+

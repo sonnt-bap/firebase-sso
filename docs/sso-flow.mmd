@@ -1,0 +1,54 @@
+sequenceDiagram
+    autonumber
+    participant U as User Browser
+    participant KYC_UI as KYC System<br/>Next.js Frontend
+    participant KYC_API as KYC System<br/>API Route (/api/auth/custom-token)
+    participant FB_Client as Firebase Auth<br/>Client SDK
+    participant FB_Admin as Firebase Auth<br/>Admin SDK
+    participant USER_UI as User System<br/>Next.js Frontend
+    participant USER_API as User System<br/>API Route (/api/auth/custom-token)
+
+    %% Step 1: User logs into KYC
+    U->>KYC_UI: Open /login and submit email/password
+    KYC_UI->>FB_Client: signInWithEmailAndPassword()
+    FB_Client-->>KYC_UI: Session established (ID token issued)
+    KYC_UI-->>U: Render dashboard with “Open user-system” button
+
+    %% Step 2: KYC generates custom token
+    U->>KYC_UI: Click “Open user-system”
+    KYC_UI->>FB_Client: currentUser.getIdToken()
+    FB_Client-->>KYC_UI: ID token
+    KYC_UI->>KYC_API: POST /api/auth/custom-token { idToken, targetApp:"user-system" }
+    KYC_API->>FB_Admin: verifyIdToken(idToken)
+    FB_Admin-->>KYC_API: UID (validated)
+    KYC_API->>FB_Admin: createCustomToken(uid, { targetApp })
+    FB_Admin-->>KYC_API: customToken
+    KYC_API-->>KYC_UI: { customToken }
+    KYC_UI-->>U: window.open("https://user.example.com/sso?token=...")
+
+    %% Step 3: User system consumes token
+    U->>USER_UI: Load /sso?token=customToken
+    USER_UI->>FB_Client: signInWithCustomToken(customToken)
+    FB_Client->>FB_Admin: Validate custom token (server-side)
+    FB_Admin-->>FB_Client: UID confirmed
+    FB_Client-->>USER_UI: Session established
+    USER_UI-->>U: Redirect to dashboard (signed in)
+
+    %% Optional: Reverse direction
+    U->>USER_UI: Click “Open KYC system”
+    USER_UI->>FB_Client: currentUser.getIdToken()
+    FB_Client-->>USER_UI: ID token
+    USER_UI->>USER_API: POST /api/auth/custom-token { idToken, targetApp:"kyc-system" }
+    USER_API->>FB_Admin: verifyIdToken(idToken)
+    FB_Admin-->>USER_API: UID
+    USER_API->>FB_Admin: createCustomToken(uid, { targetApp })
+    FB_Admin-->>USER_API: customToken
+    USER_API-->>USER_UI: { customToken }
+    USER_UI-->>U: window.open("https://kyc.example.com/sso?token=...")
+    U->>KYC_UI: Load /sso?token=customToken
+    KYC_UI->>FB_Client: signInWithCustomToken(customToken)
+    FB_Client->>FB_Admin: Validate custom token
+    FB_Admin-->>FB_Client: UID confirmed
+    FB_Client-->>KYC_UI: Session established
+    KYC_UI-->>U: Redirect to KYC dashboard
+
